@@ -1,5 +1,4 @@
 import json
-
 import numpy as np
 import requests
 import datetime
@@ -439,21 +438,6 @@ def fun6():
 
 
 
-while 1:
-    mode = input("Какую диаграмму строить?\nВыберите: 1,2,3,4,5,6? 0-exit\n>")
-    if mode == '1':
-        fun1()
-    elif mode == '2':
-        fun2()
-    elif mode == '3':
-        fun3()
-    elif mode == '4':
-        fun4()
-    elif mode == '5':
-        fun5()
-    elif mode == '6':
-        fun6()
-    elif mode == '0':
-        exit(0)
+
 
 
