@@ -1,0 +1,10 @@
+# сначала это
+pip install -r requirements
+
+
+# потом это
+sudo python3 setup.py install
+
+
+# запускать как:
+runlab3.py
