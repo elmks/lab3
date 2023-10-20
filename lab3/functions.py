@@ -5,24 +5,135 @@ import datetime
 import matplotlib.pyplot as plt
 from collections import Counter
 
-def fun1():
+
+def convert_time(time_str):
+    time = datetime.datetime.strptime(time_str, '%Y-%m-%dT%H:%M:%S.%f%z')
+    return time
+
+
+def get_issue_created_time(issue):
+    time_str = issue['fields']['created']
+    time = convert_time(time_str)
+    return time
+
+
+def get_issue_resolution_time(issue):
+    time_str = issue['fields']['resolutiondate']
+    time = convert_time(time_str)
+    return time
+
+
+def get_issue_item_to_time(issue, field, to):
+    time_list = []
+    for history in issue['changelog']['histories']:
+        for item in history['items']:
+            if item['field'] == field and (item['toString'] == to or item['to'] == to):
+                time_list.append(convert_time(history['created']))
+    return time_list
+
+
+def timedelta_to_sec(time):
+    return time.total_seconds()
+
+
+def timedelta_to_min(time):
+    return time.total_seconds() / 60
+
+
+def timedelta_to_hours(time):
+    return time.total_seconds() / 3600
+
+
+def timedelta_to_days(time):
+    return time.total_seconds() / (3600 * 24)
+
+
+def summ_elements(list):
+    list_summ = []
+    s = 0
+    for elem in list:
+        s = s + elem
+        list_summ.append(s)
+    return list_summ
+
+
+def make_lists_name_num(list_users, count):
+    counted_values = Counter(list_users)
+    arr = counted_values.most_common(count)
+    list_names = []
+    list_nums = []
+    for elem in arr:
+        list_names.append(elem[0])
+        list_nums.append(elem[1])
+    return list_names, list_nums
+
+
+def get_resolved_time_for_assignee(issue, username):
+    l_start = get_issue_item_to_time(issue, 'assignee', username)
+    if l_start == []:
+        time_start = get_issue_created_time(issue)
+    else:
+        time_start = l_start[-1]
+
+    l_stop = get_issue_item_to_time(issue, 'status', 'Resolved')
+    if l_stop == []:
+        time_stop = get_issue_resolution_time(issue)
+    else:
+        time_stop = l_stop[-1]
+
+    return timedelta_to_hours(time_stop - time_start)
+
+
+def status_statistic(issue):
+    sum_time_open = datetime.timedelta(0)
+    sum_time_in_progress = datetime.timedelta(0)
+    sum_time_resolved = datetime.timedelta(0)
+    sum_time_reopened = datetime.timedelta(0)
+    sum_time_patch_available = datetime.timedelta(0)
+
+    time_start = get_issue_created_time(issue)
+    for history in issue['changelog']['histories']:
+        for item in history['items']:
+            if item['field'] == 'status':
+                time_stop = convert_time(history['created'])
+                time = time_stop - time_start
+                status = item['fromString']
+                if status == 'Open':
+                    sum_time_open = sum_time_open + time
+                elif status == 'In Progress':
+                    sum_time_in_progress = sum_time_in_progress + time
+                elif status == 'Resolved':
+                    sum_time_resolved = sum_time_resolved + time
+                elif status == 'Reopened':
+                    sum_time_reopened = sum_time_reopened + time
+                elif status == 'Patch Available':
+                    sum_time_patch_available = sum_time_patch_available + time
+                time_start = time_stop
+
+    return sum_time_open, sum_time_in_progress, sum_time_resolved, sum_time_reopened, sum_time_patch_available
+
+
+def graph1():
     payload = {'jql': 'project=KAFKA AND status=Closed ORDER BY createdDate', 'maxResults': '1000',
-               'fields': 'resolutiondate,created'}
+               'expand': 'changelog',
+               'fields': 'created,resolutiondate'}
 
     response = requests.get('https://issues.apache.org/jira/rest/api/2/search', params=payload)
     data = json.loads(response.text)
-    count = len(data['issues'])
+
     list_data = []
     for elem in data['issues']:
-        created = elem['fields']['created']
-        resolutiondate = elem['fields']['resolutiondate']
-        created_t = datetime.datetime.strptime(created, '%Y-%m-%dT%H:%M:%S.%f%z')
-        resolutiondate_t = datetime.datetime.strptime(resolutiondate, '%Y-%m-%dT%H:%M:%S.%f%z')
-        time = resolutiondate_t - created_t
-        list_data.append(time.total_seconds() / (3600 * 24))
+        created_t = get_issue_created_time(elem)
+        closed_t_list = get_issue_item_to_time(elem, 'status', 'Closed')
+        if closed_t_list == []:
+            closed_t = get_issue_resolution_time(elem)
+        else:
+            closed_t = closed_t_list[-1]
+        time = closed_t - created_t
+        list_data.append(timedelta_to_days(time))
 
+    count = len(data['issues'])
     max_el = max(list_data)
-
     plt.hist(list_data, color='blue', edgecolor='black', bins=25)
     plt.title('Гистограмма 1')
     plt.xlabel('Время решения (дни)')
@@ -44,7 +155,7 @@ def fun1():
     plt.show()
 
 
-def fun2():
+def graph2():
     list_open = []
     list_in_progress = []
     list_resolved = []
@@ -55,53 +166,26 @@ def fun2():
 
     payload = {'jql': 'project=KAFKA AND status=Closed ORDER BY createdDate', 'maxResults': '1000',
                'expand': 'changelog',
-               'fields': 'changelog,created'}
+               'fields': 'created'}
 
     response = requests.get('https://issues.apache.org/jira/rest/api/2/search', params=payload)
     data = json.loads(response.text)
 
-    time_start = None
-    time_stop = None
-
     for elem in data['issues']:
-        sum_time_open = 0
-        sum_time_in_progress = 0
-        sum_time_resolved = 0
-        sum_time_reopened = 0
-        sum_time_patch_available = 0
+        t_open, t_in_prog, t_res, t_reo, t_patch = status_statistic(elem)
 
-        time_start = datetime.datetime.strptime(elem['fields']['created'], '%Y-%m-%dT%H:%M:%S.%f%z')
-        for history in elem['changelog']['histories']:
-            history_time = datetime.datetime.strptime(history['created'], '%Y-%m-%dT%H:%M:%S.%f%z')
-            for item in history['items']:
-                if item['field'] == 'status':
-                    time_stop = history_time
-                    time = (time_stop - time_start).total_seconds()
-                    status = item['fromString']
-                    if status == 'Open':
-                        sum_time_open = sum_time_open + time
-                    elif status == 'In Progress':
-                        sum_time_in_progress = sum_time_in_progress + time
-                    elif status == 'Resolved':
-                        sum_time_resolved = sum_time_resolved + time
-                    elif status == 'Reopened':
-                        sum_time_reopened = sum_time_reopened + time
-                    elif status == 'Patch Available':
-                        sum_time_patch_available = sum_time_patch_available + time
-                    time_start = time_stop
-
-        if sum_time_open != 0:
-            list_open.append(sum_time_open / (3600 * 24))
-        if sum_time_patch_available != 0:
-            list_patch_available_day.append(sum_time_patch_available / (3600 * 24))
-            list_patch_available.append(sum_time_patch_available / 3600)
-        if sum_time_reopened != 0:
-            list_reopened.append(sum_time_reopened / (3600 * 24))
-        if sum_time_resolved != 0:
-            list_resolved.append(sum_time_resolved)
-            list_resolved_day.append(sum_time_resolved / (3600 * 24))
-        if sum_time_in_progress != 0:
-            list_in_progress.append(sum_time_in_progress / (3600 * 24))
+        if t_open != datetime.timedelta(0):
+            list_open.append(timedelta_to_days(t_open))
+        if t_in_prog != datetime.timedelta(0):
+            list_in_progress.append(timedelta_to_days(t_in_prog))
+        if t_res != datetime.timedelta(0):
+            list_resolved.append(timedelta_to_sec(t_res))
+            list_resolved_day.append(timedelta_to_days(t_res))
+        if t_reo != datetime.timedelta(0):
+            list_reopened.append(timedelta_to_days(t_reo))
+        if t_patch != datetime.timedelta(0):
+            list_patch_available_day.append(timedelta_to_days(t_patch))
+            list_patch_available.append(timedelta_to_hours(t_patch))
 
     # print(list_open)
     # print(list_resolved)
@@ -197,9 +281,8 @@ def fun2():
     plt.tight_layout()
     plt.show()
 
-
-
-def fun3():
+graph2()
+def graph3():
     # за последние 90 дней
 
     NUM_DAYS = 90
@@ -219,56 +302,32 @@ def fun3():
         list_dates.append(date)
 
     list_open_by_day.reverse()
-
     list_dates.reverse()
 
     plt.plot(list_open_by_day, linewidth=3.0, color='red')
-    # plt.title(f'График созданных задач за последние {NUM_DAYS} дней')
-    # plt.xlabel('Дата')
-    # plt.ylabel('Количество задач')
 
-    # x_list=[]
-    # for i in range(NUM_DAYS):
-    # x_list.append(i)
-
-    # plt.xticks (x_list,labels=list_dates,rotation=45)
-    # plt.show()
-
-    #####
     close_list_dates = []
-    payload = {'jql': 'project=KAFKA AND status=Closed ORDER BY createdDate', 'maxResults': '1000',
+    payload = {'jql': f'project=KAFKA AND status=Closed', 'maxResults': '1000',
                'expand': 'changelog',
-               'fields': 'changelog'}
+               'fields': 'created'}
 
     response = requests.get('https://issues.apache.org/jira/rest/api/2/search', params=payload)
     data = json.loads(response.text)
 
     for elem in data['issues']:
-        for history in elem['changelog']['histories']:
-            history_time = datetime.datetime.strptime(history['created'], '%Y-%m-%dT%H:%M:%S.%f%z').date()
-            for item in history['items']:
-                if item['field'] == 'status':
-                    status = item['toString']
-                    if status == 'Closed':
-                        close_list_dates.append(history_time)
+        l_time = get_issue_item_to_time(elem, 'status', 'Closed')
+        if l_time != []:
+            close_list_dates.append(l_time[-1].date())
 
     close_list_dates.sort()
     close_list_dates.reverse()
-    # даты закрытия задач
-    # for i in close_list_dates:
-    #     print(i)
-
-    current_date = datetime.date.today()
+    counter = Counter(close_list_dates)
 
     list_close_by_day = []
+
     for i in range(NUM_DAYS):
         date = current_date - datetime.timedelta(days=i)
-        k = 0
-        for el in close_list_dates:
-            if el == date:
-                k = k + 1
-            if el < date:
-                break
+        k = counter[date]
         list_close_by_day.append(k)
 
     list_close_by_day.reverse()
@@ -285,30 +344,19 @@ def fun3():
     plt.xticks(x_list, labels=list_dates, rotation=90, size=8)
     plt.show()
 
-    summary_list_open = []
-    summary_list_close = []
-    summ = 0
-    for elem in list_open_by_day:
-        summ = summ + elem
-        summary_list_open.append(summ)
-
-    summ = 0
-    for elem in list_close_by_day:
-        summ = summ + elem
-        summary_list_close.append(summ)
+    summary_list_open = summ_elements(list_open_by_day)
+    summary_list_close = summ_elements(list_close_by_day)
 
     plt.plot(summary_list_open, linewidth=3.0, color='red')
     plt.plot(summary_list_close, linewidth=3.0, color='green')
     plt.title(f'Графики накопления открытых и закрытых задач за последние {NUM_DAYS} дней')
     plt.xlabel('Дата')
     plt.ylabel('Количество задач')
-
     plt.xticks(x_list, labels=list_dates, rotation=90, size=8)
     plt.show()
 
 
-
-def fun4():
+def graph4():
     payload = {'jql': 'project=KAFKA AND NOT assignee=null AND NOT reporter=null', 'maxResults': '1',
                'fields': 'reporter,assignee'}
 
@@ -331,15 +379,15 @@ def fun4():
             if reporter == assignee:
                 list_users.append(reporter)
 
-    counted_values = Counter(list_users)
-    arr = counted_values.most_common(30)
-    list_users_30 = []
-    list_count_30 = []
-    for elem in arr:
-        list_users_30.append(elem[0])
-        list_count_30.append(elem[1])
+    list_users_30, list_numbers_30 = make_lists_name_num(list_users, 30)
 
-    plt.plot(list_count_30, linewidth=3.0, color='green')
+    plt.plot(list_numbers_30, list_users_30, linewidth=3.0, color='green')
+    plt.title(f'График пользователи и задачи')
+    plt.ylabel('Пользователь')
+    plt.xlabel('Количество задач')
+    plt.show()
+
+    plt.plot(list_numbers_30, linewidth=3.0, color='green')
     plt.title(f'График пользователи и задачи')
     plt.xlabel('Пользователь')
     plt.ylabel('Количество задач')
@@ -350,7 +398,8 @@ def fun4():
     plt.show()
 
 
-def fun5():
+def graph5():
+    username = 'nehanarkhede'
     list_5 = []
     payload = {'jql': 'project=KAFKA AND status=Closed AND NOT assignee=null', 'maxResults': '1000',
                'fields': 'assignee'}
@@ -366,7 +415,7 @@ def fun5():
 
     ##################
 
-    payload = {'jql': 'project=KAFKA AND status=Closed AND assignee=nehanarkhede', 'maxResults': '1000',
+    payload = {'jql': f'project=KAFKA AND status=Closed AND assignee={username}', 'maxResults': '1000',
                'expand': 'changelog',
                'fields': 'resolutiondate,created'}
 
@@ -376,17 +425,7 @@ def fun5():
     times_list = []
 
     for elem in data['issues']:
-        resolutiondate = datetime.datetime.strptime(elem['fields']['resolutiondate'], '%Y-%m-%dT%H:%M:%S.%f%z')
-        created = datetime.datetime.strptime(elem['fields']['created'], '%Y-%m-%dT%H:%M:%S.%f%z')
-        for hist in elem['changelog']['histories']:
-            created_hist = datetime.datetime.strptime(hist['created'], '%Y-%m-%dT%H:%M:%S.%f%z')
-            for item in hist['items']:
-                if item['field'] == 'assignee' and item['to'] == 'nehanarkhede':
-                    created = created_hist
-
-        time_delta = (resolutiondate - created).total_seconds()
-        if time_delta > 0:
-            times_list.append(time_delta / 3600)
+        times_list.append(get_resolved_time_for_assignee(elem, username))
 
     plt.hist(times_list, bins=100, edgecolor='black', color='blue')
 
@@ -397,7 +436,7 @@ def fun5():
     plt.show()
 
 
-def fun6():
+def graph6():
     payload = {'jql': 'project=KAFKA', 'maxResults': '1', 'fields': 'priority'}
     response = requests.get('https://issues.apache.org/jira/rest/api/2/search', params=payload)
     data = json.loads(response.text)
@@ -413,8 +452,6 @@ def fun6():
         for elem in data['issues']:
             list_prio.append(elem['fields']['priority']['name'])
 
-    # print(list_prio)
-    # print(set(list_prio))
     counted_values = Counter(list_prio)
 
     list_x = ['Trivial', 'Minor', 'Major', 'Critical', 'Blocker']
@@ -434,10 +471,3 @@ def fun6():
     plt.yticks(list_y)
     plt.xticks(x_list, labels=list_x)
     plt.show()
-
-
-
-
-
-
-
