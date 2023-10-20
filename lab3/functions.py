@@ -281,7 +281,7 @@ def graph2():
     plt.tight_layout()
     plt.show()
 
-graph2()
+
 def graph3():
     # за последние 90 дней
 
