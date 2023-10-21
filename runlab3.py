@@ -11,7 +11,8 @@ while 1:
     elif mode == '4':
         lab3.functions.graph4()
     elif mode == '5':
-        lab3.functions.graph5()
+        username = input("username:\n>")
+        lab3.functions.graph5(username)
     elif mode == '6':
         lab3.functions.graph6()
     elif mode == '0':

@@ -135,7 +135,7 @@ def graph1():
     count = len(data['issues'])
     max_el = max(list_data)
     plt.hist(list_data, color='blue', edgecolor='black', bins=25)
-    plt.title('Гистограмма 1')
+    plt.title('1. Гистограмма 1')
     plt.xlabel('Время решения (дни)')
     plt.xticks(np.arange(0, int(max_el), int(max_el / 20)))
     plt.ylabel('Количество задач')
@@ -143,11 +143,11 @@ def graph1():
     plt.show()
 
     list_data.sort()
-    middle_index = int(count / 1.2)
+    middle_index = int(count / 1.4)
     first_patr = list_data[:middle_index]
     max_el = max(first_patr)
-    plt.hist(first_patr, color='green', edgecolor='black', bins=25)
-    plt.title('Гистограмма 2')
+    plt.hist(first_patr, color='blue', edgecolor='black', bins=25)
+    plt.title('1. Гистограмма 2')
     plt.xlabel('Время решения (дни)')
     plt.xticks(np.arange(0, int(max_el), int(max_el / 20)))
     plt.ylabel('Количество задач')
@@ -195,7 +195,7 @@ def graph2():
 
     ###### Open
     plt.hist(list_open, color='blue', edgecolor='black', bins=30)
-    plt.title('Диаграмма Open 1')
+    plt.title('2. Диаграмма Open 1')
     plt.xlabel('Время решения (дни)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -205,7 +205,7 @@ def graph2():
     middle_index = int(len(list_open) / 1.2)
     first_patr = list_open[:middle_index]
     plt.hist(first_patr, color='blue', edgecolor='black', bins=80)
-    plt.title('Диаграмма Open 2')
+    plt.title('2. Диаграмма Open 2')
     plt.xlabel('Время решения (дни)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -213,7 +213,7 @@ def graph2():
 
     ###### Resolved
     plt.hist(list_resolved_day, color='green', edgecolor='black', bins=30)
-    plt.title('Диаграмма Resolved 1')
+    plt.title('2. Диаграмма Resolved 1')
     plt.xlabel('Время решения (дни)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -223,7 +223,7 @@ def graph2():
     middle_index = int(len(list_resolved) / 1.6)
     first_patr = list_resolved[:middle_index]
     plt.hist(first_patr, color='green', edgecolor='black', bins=80)
-    plt.title('Диаграмма Resolved 2')
+    plt.title('2. Диаграмма Resolved 2')
     plt.xlabel('Время решения (секунды)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -232,7 +232,7 @@ def graph2():
     middle_index = int(len(list_resolved) / 1.8)
     second_patr = list_resolved[:middle_index]
     plt.hist(second_patr, color='green', edgecolor='black', bins=80)
-    plt.title('Диаграмма Resolved 3')
+    plt.title('2. Диаграмма Resolved 3')
     plt.xlabel('Время решения (секунды)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -240,7 +240,7 @@ def graph2():
 
     ###### Reopened
     plt.hist(list_reopened, color='yellow', edgecolor='black', bins=175)
-    plt.title('Диаграмма Reopened')
+    plt.title('2. Диаграмма Reopened')
     plt.xlabel('Время решения (дни)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -248,7 +248,7 @@ def graph2():
 
     #### In Progress
     plt.hist(list_in_progress, color='purple', edgecolor='black', bins=50)
-    plt.title('Диаграмма In Progress 1')
+    plt.title('2. Диаграмма In Progress 1')
     plt.xlabel('Время решения (дни)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -257,7 +257,7 @@ def graph2():
     list_in_progress.sort()
     second_patr = list_in_progress[:len(list_in_progress) - 4]
     plt.hist(second_patr, color='purple', edgecolor='black', bins=80)
-    plt.title('Диаграмма In Progress 2')
+    plt.title('2. Диаграмма In Progress 2')
     plt.xlabel('Время решения (дни)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -265,7 +265,7 @@ def graph2():
 
     ###### Patch Available
     plt.hist(list_patch_available_day, color='orange', edgecolor='black', bins=30)
-    plt.title('Диаграмма Patch Available 1')
+    plt.title('2. Диаграмма Patch Available 1')
     plt.xlabel('Время решения (дни)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -275,7 +275,7 @@ def graph2():
     middle_index = int(len(list_patch_available) / 1.3)
     second_patr = list_patch_available[:middle_index]
     plt.hist(second_patr, color='orange', edgecolor='black', bins=40)
-    plt.title('Диаграмма Patch Available 2')
+    plt.title('2. Диаграмма Patch Available 2')
     plt.xlabel('Время решения (часы)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
@@ -284,7 +284,6 @@ def graph2():
 
 def graph3():
     # за последние 90 дней
-
     NUM_DAYS = 90
 
     list_open_by_day = []
@@ -333,7 +332,7 @@ def graph3():
     list_close_by_day.reverse()
 
     plt.plot(list_close_by_day, linewidth=3.0, color='green')
-    plt.title(f'Графики открытых и закрытых задач за последние {NUM_DAYS} дней')
+    plt.title(f'3. Графики открытых и закрытых задач за последние {NUM_DAYS} дней')
     plt.xlabel('Дата')
     plt.ylabel('Количество задач')
 
@@ -349,7 +348,7 @@ def graph3():
 
     plt.plot(summary_list_open, linewidth=3.0, color='red')
     plt.plot(summary_list_close, linewidth=3.0, color='green')
-    plt.title(f'Графики накопления открытых и закрытых задач за последние {NUM_DAYS} дней')
+    plt.title(f'3. Графики накопления открытых и закрытых задач за последние {NUM_DAYS} дней')
     plt.xlabel('Дата')
     plt.ylabel('Количество задач')
     plt.xticks(x_list, labels=list_dates, rotation=90, size=8)
@@ -398,8 +397,8 @@ def graph4():
     plt.show()
 
 
-def graph5():
-    username = 'nehanarkhede'
+def graph5(username):
+    #username = 'nehanarkhede'
     list_5 = []
     payload = {'jql': 'project=KAFKA AND status=Closed AND NOT assignee=null', 'maxResults': '1000',
                'fields': 'assignee'}
@@ -429,7 +428,7 @@ def graph5():
 
     plt.hist(times_list, bins=100, edgecolor='black', color='blue')
 
-    plt.title('Гистограмма пользователь nehanarkhede')
+    plt.title(f'Гистограмма: пользователь {username}')
     plt.xlabel('Время решения (часы)')
     plt.ylabel('Количество задач')
     plt.tight_layout()
