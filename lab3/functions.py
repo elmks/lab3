@@ -436,30 +436,14 @@ def graph5(username):
 
 
 def graph6():
-    payload = {'jql': 'project=KAFKA', 'maxResults': '1', 'fields': 'priority'}
-    response = requests.get('https://issues.apache.org/jira/rest/api/2/search', params=payload)
-    data = json.loads(response.text)
-    total = int(data['total'])
-
-    list_prio = []
-
-    for start_at in range(0, total, 1000):
-        payload = {'jql': 'project=KAFKA', 'maxResults': '1000', 'startAt': f'{start_at}', 'fields': 'priority'}
-
-        response = requests.get('https://issues.apache.org/jira/rest/api/2/search', params=payload)
-        data = json.loads(response.text)
-        for elem in data['issues']:
-            list_prio.append(elem['fields']['priority']['name'])
-
-    counted_values = Counter(list_prio)
-
     list_x = ['Trivial', 'Minor', 'Major', 'Critical', 'Blocker']
     list_y = []
-    list_y.append(counted_values['Trivial'])
-    list_y.append(counted_values['Minor'])
-    list_y.append(counted_values['Major'])
-    list_y.append(counted_values['Critical'])
-    list_y.append(counted_values['Blocker'])
+    for prio in list_x:
+        payload = {'jql': f'project=KAFKA AND priority = {prio}', 'maxResults': '1', 'fields': 'priority'}
+        response = requests.get('https://issues.apache.org/jira/rest/api/2/search', params=payload)
+        data = json.loads(response.text)
+        list_y.append(int(data['total']))
+
 
     plt.plot(list_y, linewidth=3.0, color='green')
     plt.title(f'График количество задач по степени серьезности')
@@ -470,3 +454,4 @@ def graph6():
     plt.yticks(list_y)
     plt.xticks(x_list, labels=list_x)
     plt.show()
+
