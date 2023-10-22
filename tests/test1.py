@@ -8,7 +8,6 @@ ex2 = pathlib.Path(__file__).parent.joinpath("example_2.json")
 ex3 = pathlib.Path(__file__).parent.joinpath("example_3.json")
 class MyTestCase(unittest.TestCase):
 
-
     def test_summ_elements_1(self):
         list1 = [0,1,2,3,4]
         res = lab3.functions.summ_elements(list1)
